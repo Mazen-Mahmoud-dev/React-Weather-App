@@ -1,29 +1,30 @@
-import { useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import Search from "../search/Search";
+import { weatherContext } from "./WeatherProvider";
 
 export default function Weather() {
+  const { weatherData, fetchWeatherData,loading } = useContext(weatherContext);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [weatherData, setWeatherData] = useState(null);
-  async function fetchWeatherData(param) {
-    setLoading(true);
-    try {
-      const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${param}&appid=e34b4c51d8c2b7bf48d5217fe52ff79e`
-      );
+  const [unit,setUnit] = useState("metric");
+  // async function fetchWeatherData(param) {
+  //   setLoading(true);
+  //   try {
+  //     const response = await fetch(
+  //       `https://api.openweathermap.org/data/2.5/weather?q=${param}&units=${unit}&appid=e34b4c51d8c2b7bf48d5217fe52ff79e`
+  //     );
+      
+  //     const data = await response.json();
+  //     if (data) {
+  //       setWeatherData(data);
+  //       setLoading(false);
+  //     }
+  //   } catch (e) {
+  //     setLoading(false);
+  //   }
+  // }
 
-      const data = await response.json();
-      if (data) {
-        setWeatherData(data);
-        setLoading(false);
-      }
-    } catch (e) {
-      setLoading(false);
-    }
-  }
-
-  async function handleSearch() {
-    fetchWeatherData(search);
+  async function handleSearch(search,unit) {
+    fetchWeatherData(search,unit);
   }
 
   function getCurrentDate() {
@@ -34,53 +35,63 @@ export default function Weather() {
       year: "numeric",
     });
   }
+  const handleToggleUnit =  () => {
+    const newUnit = unit === "metric" ? "imperial" : "metric";
+    setUnit(newUnit);
 
-  useEffect(() => {
-    fetchWeatherData("bangalore");
-  }, []);
+    handleSearch(search, newUnit); 
 
-
+  };
   return (
     <div>
-      <Search
-        search={search}
-        setSearch={setSearch}
-        handleSearch={handleSearch}
-      />
-      {loading ? (
+      <nav>
+        <h2>Weather App</h2>
+          <Search
+            search={search}
+            setSearch={setSearch}
+            handleSearch={()=>handleSearch(search,unit)}
+          />
+      </nav>
+      
+
+      {weatherData ? loading ? (
         <div className="loading">Loading...</div>
       ) : (
         <div>
-          <div className="city-name">
-            <h2>
-              {weatherData?.name}, <span>{weatherData?.sys?.country}</span>
-            </h2>
+          <div className="weather-details">
+            <div className="city-name">
+              <h2>
+                Location: {weatherData?.name}, <span>{weatherData?.sys?.country}</span>
+              </h2>
+            </div>
+            <div className="date">
+              <span>{getCurrentDate()}</span>
+            </div>
           </div>
-          <div className="date">
-            <span>{getCurrentDate()}</span>
-          </div>
-          <div className="temp">{weatherData?.main?.temp}</div>
+          <div className="temp">{weatherData?.main?.temp}°{unit === "metric" ? "C" : "F"}</div>
           <p className="description">
             {weatherData && weatherData.weather && weatherData.weather[0]
-              ? weatherData.weather[0].description
-              : ""}
+              && weatherData.weather[0].description}
           </p>
           <div className="weather-info">
             <div className="column">
               <div>
-                <p className="wind">{weatherData?.wind?.speed}</p>
                 <p>Wind Speed</p>
+                <p className="wind">{weatherData?.wind?.speed} Km/h</p>
+                
               </div>
             </div>
             <div className="column">
               <div>
-                <p className="humidity">{weatherData?.main?.humidity}%</p>
                 <p>Humidity</p>
+                <p className="humidity">{weatherData?.main?.humidity}%</p>
+                
               </div>
             </div>
           </div>
+          <button onClick={handleToggleUnit} className="toggle-unit-btn">Change unit</button>
         </div>
-      )}
+      ):""}
     </div>
   );
 }
